@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-reboot@4.5.4/dist/reboot.min.css" rel="stylesheet"></link>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.17.1/styles/github.min.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.17.1/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/TRSasasusu/highlightjs-highlight-lines.js@1.1.6/highlightjs-highlight-lines.min.js"></script>
+
+
+  <style>
+  hljs-ln-numbers{-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;text-align:right;color:#ccc;vertical-align:top}.hljs-ln td.hljs-ln-numbers{padding-right:1.25rem}
+  html,body{
+    height:100%;
+  }
+  .code{
+    border:solid 1px gray;
+    font-size: xx-small;
+  }
+  #contents{
+    border: solid 1px;
+    width: 50%;
+    height: 100%;
+  }
+  #render{
+    position: absolute;
+    top: 0;
+    left: 50%;
+    height:100%;
+    width: 50%;
+  }
+  h1{
+    margin-left: -0.5em;
+  }
+  h2{
+    margin-left: -0.5em;
+  }
+
+  h3{
+    background-color: #ddf;
+  }
+  #render{
+    margin: 1em;
+  }
+
+  </style>
+</head>
+<body>
+
+<! ### start ### ->
+<textarea id="contents">
+
+# ここにドキュメントを書きます。
+
+:code https://github.com/spiffe/spire/blob/main/cmd/spire-server/main.go#L1-L11 10
+
+
+</textarea>
+<! ### end ### ->
+
+<div id="render">
+</div>
+
+
+<script>
+  let getGitHubSnippet = (url, no) => new Promise(function(resolve, reject){
+    let target = new URL(url)
+    const lineSplit = target.hash.split("-");
+    const startLine = target.hash !== "" && parseInt(lineSplit[0].replace("#L", "")) || -1;
+    const endLine = target.hash !== "" && lineSplit.length > 1 && parseInt(lineSplit[1].replace("L", "")) || startLine;
+
+    const pathSplit = target.pathname.split("/");
+    const user = pathSplit[1];
+    const repository = pathSplit[2];
+    const branch = pathSplit[4];
+    const file = pathSplit.slice(5, pathSplit.length).join("/");
+
+    const rawFileURL = `https://raw.githubusercontent.com/${user}/${repository}/${branch}/${file}`;
+
+    const fetchFile = fetch(rawFileURL).then((response) => {
+      if (response.ok) {
+        return response.text();
+      } else {
+        return Promise.reject(`${response.status} ${response.statusText}`);
+      }
+    });
+
+    fetchFile.then((result) => {
+      let snippet = result.split(/[\r\n]/).slice(startLine - 1, endLine).join("\n");
+      let outerElm = document.createElement("div")
+      let codeElm = document.createElement("pre")
+      codeElm.className = "code"
+      codeElm.appendChild(document.createTextNode(snippet))
+      //document.body.appendChild(codeElm);
+      hljs.highlightBlock(codeElm);
+      hljs.lineNumbersBlock(codeElm, {singleLine: true, startFrom: startLine});
+      hljs.highlightLinesCode(codeElm, [{color: 'yellow',start: no-startLine, end: no - startLine}]);
+
+      let headerElm = document.createElement('h3');
+      headerElm.innerHTML = `<a href="${url}" target="_blank">${file}</a>`
+      outerElm.appendChild(headerElm);
+      outerElm.appendChild(codeElm);
+      resolve(outerElm);
+    });
+  });
+
+  (() => {
+    let elm = document.getElementById("contents");
+    let renderElm = document.getElementById("render");
+    function render(){
+      renderElm.innerHTML = "";
+      let inputText = elm.value;
+      inputText.split(/[\r\n]+/).forEach((l) => {
+        if(l.indexOf(':code') == 0){
+          let anchor = document.createElement("div")
+          let parts = l.split(/\s+/);
+          renderElm.appendChild(anchor);
+          getGitHubSnippet(parts[1], parts[2]).then((elm) => {
+                          renderElm.replaceChild(elm ,anchor);
+          	      });
+        }else if(l.indexOf('## ') == 0){
+          let e = document.createElement("h2")
+          e.appendChild(document.createTextNode(l));
+          renderElm.appendChild(e);
+        }else if(l.indexOf('# ') == 0){
+          let e = document.createElement("h1")
+          e.appendChild(document.createTextNode(l));
+          renderElm.appendChild(e);
+        }else{
+          let e = document.createElement("div")
+          e.appendChild(document.createTextNode(l));
+          renderElm.appendChild(e);
+        }
+      })
+    } 
+    render();
+    elm.addEventListener('keyup', render);
+  })();
+
+
+</script>
+</body>
+</html>
